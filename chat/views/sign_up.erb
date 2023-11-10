@@ -1,0 +1,66 @@
+<div class="signup-content">
+  <div class="signup">
+    <h1 class="signup-signup">Signup</h1>
+    <div class="signup-error-error"></div>
+    <div class="signup-form">
+      <div class="signup-username">
+        <h2 class="signup-name-name">Name</h2>
+        <input type="text" class="signup-name" id="name" required><br>
+      </div>
+      <div class="signup-email">
+        <h2 class="signup-mail-mail">Email</h2>
+        <input type="text" class="signup-mail" id="mail" required><br>
+      </div>
+      <div class="signup-password">
+        <h2 class="signup-pass-pass">Password</h2>
+        <input type="password" class="signup-pass" id="password" required><br>
+      </div>
+      <div class="signup-password-confirmation">
+        <h2 class="signup-pass-pass">Confirm Password</h2>
+        <input type="password" class="signup-pass-confirm" id="password_confirmation" required><br>
+      </div>
+    </div>
+    <button class="signup-submit" id="submit">Signup</button>
+    <div class="signup-signin">
+      <p class="signup-member">Already a member?</p> <a class="signup-signin-a" href="/signin">Login here</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelector('#submit').addEventListener('click', () => {
+    const name = document.querySelector('#name').value
+    const mail = document.querySelector('#mail').value
+    const password = document.querySelector('#password').value
+    const password_confirmation = document.querySelector('#password_confirmation').value
+    fetch('/signup', {
+      method: 'POST', 
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name: name,
+        mail: mail,
+        password: password,
+        password_confirmation: password_confirmation
+      })
+    })
+      .then(res => res.json())
+      .then(data => {
+        console.log('post', data)
+        if (data.msg == 'create_profile') {
+          window.location.href = "/create_profile";
+        }
+        else {
+        const errorDiv = document.querySelector('.signup-error-error');
+        if (errorDiv.innerHTML.trim() === '') {
+          const error_text = document.createElement('div');
+          error_text.className = 'error-text';
+          error_text.innerHTML = '<i class="fa fa-warning" style="color: red"></i>' + data.msg;
+          const container = document.querySelector('.signup-error-error'); 
+          container.appendChild(error_text);
+        }
+      }
+    });
+  });
+</script>

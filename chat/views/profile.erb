@@ -1,0 +1,89 @@
+<div class="center-container">
+  <div class="profile-timer" id="timer"></div>
+  <div class="my-profile">
+    <div class="profile-form">
+      <div class="my-profile-icon">
+        <div class="my-icon-container" id="preview"><img class="icon-image" src="<%= @profile.icon %>"></div>
+      </div>
+      <div class="overflow"><h1 class="my-profile-profile">@<%= User.find(@profile.user_id).name %></h1>
+      <h2 class="my-pronouns"><%= @profile.pronounce %></h2></div>
+      <h1 class="friend-updated" id="text"></h1>
+      <div class="error-request"></div>
+      <div class="profile-bio">
+        <h2 class="profile-bio-bio-bio">Bio:</h2>
+        <p class="my-paragraph"><%= @profile.paragraph %></p>
+      </div>
+    </div>
+    <% if @profile.user_id == session[:user] %>
+      <button class="signup-submit" id="submit">Edit Profile</button>
+    <!--elsif  Friend.find_by(get_friend_id: @profile.user_id, sent_friend_id: session[:user]) -->
+    <!--  <button class="signup-submit" id="remove">Remove Friend</button>-->
+    <% elsif Match.find_by(user_id: session[:user], matched_id: @profile.user_id) %>
+      <button class="signup-submit" id="add">Add Friend</button>
+      <input type="hidden" class="friend-name" value="<%= User.find(@profile.user_id).name %>">
+    <% end %>
+    <% if @timer %>
+      <input type="hidden" class="at-timer" value="<%= @timer %>">
+    <% end %>
+  </div>
+</div>
+
+
+<script>
+  if (document.querySelector('.at-timer')) {
+    function chatTimer() {
+      var timerElement = document.getElementById('timer');
+      var currentTime = Math.floor(Date.now() / 1000); 
+      var endTime = parseInt(document.querySelector('.at-timer').value);
+      var countDown = endTime - currentTime;
+      
+      if (countDown <= 0) {
+        window.location.href = '/';
+      } else {
+        var minutes = Math.floor(countDown / 60);
+        var seconds = countDown % 60;
+        var formattedSeconds = seconds.toString().padStart(2, '0');
+        timerElement.innerHTML = 'Time Remaining: ' + minutes + ':' + formattedSeconds;
+      }
+    }
+    
+    setInterval(chatTimer, 1000);
+  }
+  if (document.querySelector('#submit')) {
+    document.querySelector('#submit').addEventListener('click', () => {
+      window.location.href = "/edit_profile";
+    })
+  }
+  
+  document.querySelector('#add').addEventListener('click', () => {
+  const get_friend_name = document.querySelector('.friend-name').value
+     fetch('/send_request', {
+      method: 'POST', 
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        get_friend_name: get_friend_name
+      })
+    })
+      .then(res => res.json())
+      .then(data => {
+        console.log('post', data)
+        if (data.msg == 'success') {
+          document.querySelector('#text').innerHTML = '<i class="fas fa-check-circle"></i> request sent';
+        }
+        else if (data.msg == 'user does not exist'){
+          document.querySelector('.error-request').innerHTML = '<i class="fa fa-warning" style="color: red"></i>User Does Not Exist';
+        }
+        else if (data.msg == 'you cannot add yourself'){
+          document.querySelector('.error-request').innerHTML = '<i class="fa fa-warning" style="color: red"></i>'+data.msg;
+        }
+        else if (data.msg == 'request already sent'){
+          document.querySelector('.error-request').innerHTML = '<i class="fa fa-warning" style="color: red"></i>'+data.msg;
+        }
+      })
+  })
+  
+</script>
+
+  

@@ -1,0 +1,54 @@
+</div>
+<div class="signin-content">
+  <div class="signin">
+    <h1 class="signin-login">Login</h1>
+    <div class="signin-error-error"></div>
+    <div class="signin-form">
+      <div class="signin-email">
+        <h2 class="signin-mail-mail">Email</h2>
+        <input type="text" class="signin-mail" id="mail" required><br>
+      </div>
+      <div class="signin-password">
+        <h2 class="signin-pass-pass">Password</h2>
+        <input type="password" class="signin-pass" id="password" required><br>
+      </div>
+    </div>
+    <button class="signin-submit" id="submit">Submit</button>
+    <div class="signin-signup">
+      <p class="signin-member">Not a member?</p> <a class="signin-signup-a" href="/signup">Signup here</a>
+    </div>
+  </div>
+</div>
+<script>
+  document.querySelector('#submit').addEventListener('click', () => {
+    const mail = document.querySelector('#mail').value;
+    const password = document.querySelector('#password').value;
+    fetch('/signin', {
+      method: 'POST', 
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        mail: mail,
+        password: password
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      console.log('post', data);
+      if (data.msg == 'redirect') {
+        window.location.href = "/";
+      } else {
+          const errorDiv = document.querySelector('.signin-error-error');
+          if (errorDiv.innerHTML.trim() === '') {
+            const error_text = document.createElement('div');
+            error_text.className = 'error-text';
+            error_text.innerHTML = '<i class="fa fa-warning" style="color: red"></i> Password or Email is incorrect';
+            const container = document.querySelector('.signin-error-error'); 
+            container.appendChild(error_text);
+          }
+      }
+    });
+  });
+
+</script>

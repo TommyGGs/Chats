@@ -1,0 +1,122 @@
+<% if session[:user] %>
+  <div class="send-container">
+    <div class="friend-search">
+          <h3 class="friend-add">Add Friends(by username):</h2>
+        <div class="friend-line">
+          <input type="text" id="get_friend_name" class="friend-text"required><br>
+          <button class="add-submit" id="submit">Send</button>
+        </div>
+    </div>
+    <h3 class="error-friend" id="text"></h3>
+    <h3 class="friend-updated" id="circle"></h3>
+    <h3 class="good-updated" id="friends"></h3>
+  </div>
+  <div class="friends-container">
+    <div class="request-container">
+      <div class="request-container-container">
+        <div class="friend-request">
+          <h3>Friend Requests: <%= @requests.count %></h3>
+          <div class="request-straight"></div>
+          <% @requests.each do |request| %>
+            <div class="request-id" id="<%= request.id %>">
+              <% send = request.sent_id %>
+              <p><%= User.find(send).name %> sent a friend request to you</p>
+              <button class="btn accept" id="<%= request.id%>">accept</button><button class="btn decline" id="<%= request.id%>">decline</button>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    <div class="friend-container">
+      <div class="friend-friend">
+        <h3>Friends: <%= @friends.count %></h3>
+      </div>
+        <div class="friend-straight"></div>
+        <% @friends.each do |friend| %>
+          <% friend_id = friend.sent_friend_id %>
+          <p class="chat-profile"><a class="friend-a-profile" href="/profile/<%= friend_id %>"> <%= User.find(friend_id).name %></a> is your friend</p>
+          <% if friend_id.to_i < session[:user].to_i %>
+            <% chat_id = Chat_id.find_by(user_id: friend_id, user_id2: session[:user]).id %>
+            <button class="friend-chat" value="<%= chat_id %>"><i class="fas fa-comment-alt"></i></button>
+          <% elsif friend_id.to_i > session[:user].to_i %>
+            <% chat_id = Chat_id.find_by(user_id2: friend_id, user_id1: session[:user]).id %>
+            <button class="friend-chat" value="<%= chat_id %>"><i class="fas fa-comment-alt"></i></button>
+          <% end %>
+        <% end %>
+    </div>
+  </div>
+<% else %>
+  <script>
+    window.location.href="/";
+  </script>
+<% end %>
+
+
+
+<script>
+
+  if (document.querySelector('.friend-chat')) {
+    const chatId = document.querySelector('.friend-chat').value
+    document.querySelector('.friend-chat').addEventListener('click', () => {
+      window.location.href="/chat/"+chatId;
+    })
+  }
+  document.querySelector('#submit').addEventListener('click', () => {
+  const get_friend_name = document.querySelector('#get_friend_name').value
+     fetch('/send_request', {
+      method: 'POST', 
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        get_friend_name: get_friend_name
+      })
+    })
+      .then(res => res.json())
+      .then(data => {
+        console.log('post', data)
+        if (data.msg == 'success') {
+          document.querySelector('#circle').innerHTML = '<i class="fas fa-check-circle"></i>request sent'
+          document.querySelector('#get_friend_name').value = ''
+        }
+        else 
+        document.querySelector('#text').innerHTML = '<i class="fa fa-warning" style="color: red"></i>'+data.msg
+      })
+  })
+  
+  const btns = document.querySelectorAll('.btn')
+  btns.forEach((btn) => {
+    btn.addEventListener('click', (event) => {
+      let answer = ''
+      const request_id = event.target.id 
+      
+      if (event.target.innerText == 'accept') {
+        answer = 'accept'
+      }
+      
+      if (event.target.innerText == 'decline') {
+        answer = 'decline'
+      }
+      document.querySelector('.request-id').remove()
+      fetch('/request', {
+      method: 'POST', 
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        answer: answer,
+        request_id: request_id
+      })
+    })
+      .then(res => res.json())
+      .then(data => {
+        console.log(data.msg)
+        document.querySelector('#friends').textContent = data.msg
+        location.reload();
+        if (data.msg == 'request declined') {
+          location.reload();
+        }
+      })
+})
+  })
+</script>

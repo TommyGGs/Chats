@@ -1,0 +1,203 @@
+
+  <% if session[:user] %>
+    <% if Waiting.find_by(user_id: session[:user]) %>
+    <div class="center-container">
+      <p class="match-progress">Matching in Progress...</p>
+      <button id="cancel_queue"><i class="fa fa-warning" style="color: white"></i>Cancel Queue</button>
+    </div>
+    <% elsif Match.find_by(user_id: session[:user]) %>
+    <% else %>
+    <div class="center-container">
+      <button id="queue">Queue</button>
+    </div>
+    <% end %>
+    <!--<p id="text"></p>  -->
+
+    <% if @matched %>
+      <div class="center-container">
+        <p id="matched">
+          <p class="match-match">You have matched with:</p>
+          <div class="matched">
+            <div class="match-icon-container" id="preview">
+              <img class="icon-image" src="<%= Profile.find_by(user_id: @matched.id).icon %>">
+            </div>
+            <div class="overflow-match"><p class="match-profile-profile">@<%= @matched.name %></p></div>
+            <% if Chat_id.find_by(user_id: session[:user], user_id2: @matched.id)%>
+              <% chat_id = Chat_id.find_by(user_id: session[:user], user_id2: @matched.id).id%>
+            <% elsif Chat_id.find_by(user_id: @matched.id, user_id2: session[:user])%>
+              <% chat_id = Chat_id.find_by(user_id: @matched.id, user_id2: session[:user]).id%>
+            <% end %>
+            <input type="hidden" class="chat-id" value="<%= chat_id %>">
+            <input type="hidden" class="matched-id" value="<%= @matched.id %>">
+            <input type="hidden" class="session-user" value="<%= session[:user] %>">
+            <button class="match-chat"><i class="fas fa-comment-alt"></i></button>
+            <button class="cancel-match" id="cancel_match">Delete Match</div>
+            </button>
+          </div>
+        </p>
+      </div>
+    <% end %>
+
+    <!--<p id="match"></p>-->
+
+    </div><!--.container-->
+  <% else %>
+      <div class="first-sign">
+        <button class="first-signin"><a class="first-signin-a"href="/signin">login</a></button> <button class="first-signup"><a class="first-signup-a" href="/signup">signup</a></button><br>
+      </div>
+    </div>
+  <% end %>
+
+
+<script>
+if (document.querySelector('.match-profile-profile')) {
+  document.querySelector('.match-profile-profile').addEventListener('click', () => {
+    const matched_id = document.querySelector('.matched-id').value
+    window.location.href="/profile/" + matched_id;
+  })
+  document.querySelector('.match-icon-container').addEventListener('click', () => {
+    const matched_id = document.querySelector('.matched-id').value
+    window.location.href="/profile/" + matched_id;
+  })
+    document.querySelector('.match-chat').addEventListener('click', () => {
+    const chat_id = document.querySelector('.chat-id').value
+    window.location.href="/chat/" + chat_id;
+  })
+}
+
+if (document.querySelector('.first-sign')) {
+  document.querySelector('.first-signin').addEventListener('click', () => {
+    window.location.href = "/signin";
+  })
+  document.querySelector('.first-signup').addEventListener('click', () => {
+    window.location.href = "/signup";
+  })
+}
+
+var ws;
+  function connect() {
+    if (location.protocol === 'https:') {
+      ws = new WebSocket('wss://' + location.host + '/websocket');
+    } else {
+      ws = new WebSocket('ws://' + location.host + '/websocket');
+    }
+
+    ws.onopen = function() {
+      console.log('connected');
+    };
+
+    ws.onmessage = function(e) {
+      var data = JSON.parse(e.data);
+      const session_user = document.querySelector('.session-user').value
+      
+      if (data.message == '!#%%') {
+        if (document.querySelector('.match-progress')) {
+          location.reload();
+        }
+      }
+    };
+
+    ws.onclose = function() {
+      console.log('disconnected, will reconnect in 1 second...');
+      setTimeout(function() {
+        connect();
+      }, 1000);
+    };
+  }
+  connect();
+
+if (document.querySelector('#match')) {
+  if (document.querySelector('#match').textContent == 'matching in progress...') {
+     ws.onmessage = function(e) {
+       console.log(data.message);
+       var data = JSON.parse(e.data);
+       if (data.message == '2users') {
+         location.reload();
+       }
+     }
+  }
+}
+
+document.querySelector('#friends_page').addEventListener('click', () => {
+    window.location.href = "/friends";
+
+  })
+
+  if (document.querySelector('#matched')) {
+    if (document.querySelector('#matched').textContent == !null) {
+          document.querySelector('#match').textContent = ''
+    }
+  }
+  if (document.querySelector('#queue')) {
+  document.querySelector('#queue').addEventListener('click', () => {
+     fetch('/queue', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+      })
+    })
+      // .then(res => res.json())
+      .then(data => {
+        console.log('post', data)
+
+        if (data.msg == 'send') {
+          var message = "!#%%";
+            ws.send(JSON.stringify({
+            message: message
+          }));
+        }
+          location.reload();
+        
+      })
+  })
+  };
+
+  if (document.querySelector('#cancel_queue')){
+  document.querySelector('#cancel_queue').addEventListener('click', () => {
+    console.log('s;dvoas;fvs')
+     fetch('/cancel_queue', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+      })
+    })
+      .then(res => res.json())
+      .then(data => {
+        console.log('post', data)
+        if (data.msg == 'success') {
+          location.reload();
+        }
+        else {
+          // document.querySelector('#text').textContent = data.msg
+        }
+      })
+  })
+  };
+
+    if (document.querySelector('#cancel_match')) {
+    document.querySelector('#cancel_match').addEventListener('click', () => {
+     fetch('/cancel_match', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+      })
+    })
+      .then(res => res.json())
+      .then(data => {
+        console.log('post', data)
+        if (data.msg == 'success') {
+          location.reload();
+        }
+        else {
+          // document.querySelector('#text').textContent = data.msg
+        }
+      })
+    })
+  };
+</script>

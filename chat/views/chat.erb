@@ -1,0 +1,153 @@
+<% if @user == session[:user] %>
+  <div class="center-container">
+    <div class="chat-timer" id="timer"></div>
+    <h2>Today's Topic: <%= question %></h2>
+    <div class="chat">
+      <div class="chat-top">
+        <div class="chat-icon-container" id="preview">
+          <img class="icon-image" src="<%= Profile.find_by(user_id: @get_user).icon %>">
+        </div>
+        <div class="overflow"><h1 class="chat-profile-profile">@<%= User.find(@get_user).name %></h1></div>
+      </div>
+      <div class="chat-straight"></div>
+      <input type="hidden" class="user" name="user" value="<%= User.find(session[:user]).name %>">
+      <input type="hidden" class="get-user" name="get_user" value="<%= User.find(@get_user).id %>">
+      <div class="chat-chat">
+        <% @chat.each do |chat| %>
+          <div id="chat" value="<%=chat.sent_name%>"><%=chat.text%></div>
+        <% end %>
+      </div>
+      <input class="chat-text" type="text" name="message">
+      <button class="chat-submit" id="submit">
+        <span class="material-symbols-outlined">send</span></button>
+      </div> 
+    <input type="hidden" class="get-user-name" value="<%= User.find(@get_user).name %>">
+    <input type="hidden" class="get-user-id" value="<%= User.find(@get_user).id %>">
+    <% if @timer %>
+      <input type="hidden" class="at-timer" value="<%= @timer %>">
+    <% end %>
+  </div>
+  
+  <script>
+    var get_user = document.querySelector('.get-user-id').value;
+    var get_user_name = document.querySelector('.get-user-name').value;
+    var my_name = document.querySelector('.user').value;
+    if (document.querySelector('.at-timer')) {
+      
+    function chatTimer() {
+      var timerElement = document.getElementById('timer');
+      var currentTime = Math.floor(Date.now() / 1000); 
+      var endTime = parseInt(document.querySelector('.at-timer').value);
+      var countDown = endTime - currentTime;
+      
+      if (countDown <= 0) {
+        window.location.href = '/profile/' + get_user;
+      } else {
+        var minutes = Math.floor(countDown / 60);
+        var seconds = countDown % 60;
+        var formattedSeconds = seconds.toString().padStart(2, '0');
+        timerElement.innerHTML = 'Time Remaining: ' + minutes + ':' + formattedSeconds;
+      }
+    }
+    
+    setInterval(chatTimer, 1000);
+    }
+    
+    
+    var class_chat = document.querySelectorAll('#chat');
+    class_chat.forEach(function(chat) {
+      if (chat.getAttribute('value') == my_name) {
+        chat.classList.add('my-chat');
+      }
+      else if (chat.getAttribute('value')  == get_user_name) {
+        chat.classList.add('get-chat');
+      }
+    });
+    
+    document.querySelector('.chat-icon-container').addEventListener('click', () => {
+      window.location.href = '/profile/'+ get_user;
+    })
+    document.querySelector('.chat-profile-profile').addEventListener('click', () => {
+      window.location.href = '/profile/'+ get_user;
+    })
+  
+  
+   var ws;
+    function connect() {
+      if (location.protocol === 'https:') {
+        ws = new WebSocket('wss://' + location.host + '/websocket');
+      } else {
+        ws = new WebSocket('ws://' + location.host + '/websocket');
+      }
+  
+      ws.onopen = function() {
+        console.log('connected');
+      };
+      
+      var chatContainer = document.querySelector('.chat-chat');
+      // function isUserAtBottom() {
+      //   return chatContainer.scrollHeight - chatContainer.clientHeight 
+      //   <= chatContainer.scrollTop + 5;
+      // }
+      function scrollToBottom() {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }
+      ws.onmessage = function(e) {
+        var data = JSON.parse(e.data);
+        var message = document.createElement('div');
+        
+        if (data.message == '!#%%') {
+          
+        }
+        else {
+          if (data.username == get_user_name) {
+            message.className = 'get-chat';
+          }
+          else if (data.username == my_name) {
+            message.className = 'my-chat';
+          }
+          message.innerHTML = data.message;
+          chatContainer.appendChild(message);
+          scrollToBottom();
+        }
+      };
+  
+      ws.onclose = function() {
+        console.log('disconnected, will reconnect in 1 second...');
+        setTimeout(function() {
+          connect();
+        }, 1000);
+      };
+    }
+    connect();
+    
+    window.onload = function() {
+      var chatContainer = document.querySelector('.chat-chat');
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    };
+    
+    document.querySelector('#submit').addEventListener('click', function() {
+      var message = document.querySelector('input[name="message"]').value;
+      var get_user = document.querySelector('input[name="get_user"]').value;
+          ws.send(JSON.stringify({
+            username: my_name,
+            message: message
+          }));
+          
+          fetch('/chat', {
+          method: 'POST', 
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            username: my_name,
+            message: message,
+            get_user: get_user
+          })
+        })
+        document.querySelector('input[name="message"]').value = ""
+      });
+  </script>
+<% else %>
+  <p>there is an error</p>
+<% end %>

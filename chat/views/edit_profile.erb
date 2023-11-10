@@ -1,0 +1,112 @@
+<% unless @profile.user_id == session[:user] %>
+  <script>
+    window.location.href = "/";
+  </script>
+<% else %>
+  <div class="create-profile-content">
+    <div class="create-profile">
+      <h1 class="edit-profile-profile">Edit Your Profile</h1>
+      <h1 class="profile-updated" id="text"></h1> 
+      <div class="profile-form">
+        <div class="profile-icon">
+          <h2 class="profile-icon-icon">Profile Photo:</h2>
+            <div class="icon-container" id="preview"><img class="icon-image" src="<%= @profile.icon %>"></div>
+            <label class="file-input-label"><p class="upload-image">Upload</p>
+              <input class="icon-file" type="file" accept="image/png, image/jpg" id="icon" required><br>
+            </label>
+        </div>
+        <div class="profile-bio">
+          <h2 class="profile-bio-bio">Bio:</h2>
+          <input class="profile-paragraph" type="text" id="paragraph" value="<%= @profile.paragraph %>" required><br>
+        </div>
+        <div class="profile-pronouns">
+          <h2 class="profile-pronouns-pronouns">Pronouns:</h2>
+          <select class="select-pronouns" name="pronounce" id="pronounce" required>
+            <option value="she/her">she/her</option>
+            <option value="he/him">he/him</option>
+            <option value="they/them">they/them</option>
+          </select><br>
+        </div>
+      </div>
+      <input type="hidden" id="user_name" value="<%= User.find(session[:user]).name%>">
+      <input type="hidden" id="user_id" value="<%= User.find(session[:user]) %>">
+      <input type="hidden" id="og-icon" value="<%= Profile.find_by(user_id: session[:user]).icon %>">
+      <button class="signup-submit" id="submit">Edit Profile</button>
+    </div>
+  </div>
+<% end %>
+
+
+<script>
+  const selectElement = document.getElementById('pronounce');
+  <% if @profile.pronounce == 'she/her'%>
+    selectElement.selectedIndex = 0;
+  <% elsif @profile.pronounce == 'he/him' %>
+    selectElement.selectedIndex = 1;
+  <% elsif @profile.pronounce == 'they/them' %>
+    selectElement.selectedIndex = 2;
+  <% end %>
+  
+  const icon = document.querySelector('#icon')
+  let imageBlob = document.querySelector('#og-icon').value
+  
+  icon.addEventListener('change', () => {
+    console.log('change')
+    const preview = document.querySelector('#preview')
+    const files = icon.files 
+    const file = files[0]
+    
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const imageUrl = e.target.result 
+      if (document.querySelector('.icon-image').src == '') {
+        const img = document.createElement('img')
+        img.src = imageUrl
+        img.className = 'icon-image';
+        preview.appendChild(img)
+        imageBlob = imageUrl
+      }
+      else {
+        const img = document.querySelector('.icon-image')
+        img.src = imageUrl
+        img.className = 'icon-image';
+        imageBlob = imageUrl
+      }
+    }
+    
+    reader.readAsDataURL(file)
+  })
+  
+  document.querySelector('#submit').addEventListener('click', () => {
+    const paragraph = document.querySelector('#paragraph').value
+    const icon = imageBlob
+    const pronounce = document.querySelector('#pronounce').value
+    const user_name = document.querySelector('#user_name').value
+    const user_id = document.querySelector('#user_name').value
+    fetch('/edit_profile', {
+      method: 'POST', 
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        paragraph: paragraph,
+        icon: icon,
+        pronounce: pronounce,
+        user_name: user_name,
+        user_id: user_id
+      })
+    })
+      .then(res => res.json())
+      .then(data => {
+        console.log('post', data)
+        if (data.msg == 'profile updated')
+        document.querySelector('#text').innerHTML = '<i class="fas fa-check-circle"></i> Profile Updated: <a href="/profile/<%=session[:user]%>" class="updated-link">Click Here!</a>';
+        
+        if (data.msg == 'redirect') {
+          window.location.href = "/";
+        }
+      })
+  })
+</script>
+  
+  

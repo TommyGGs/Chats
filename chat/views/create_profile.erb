@@ -1,0 +1,83 @@
+<% if Profile.find_by(user_id: session[:user]) %>
+  <script>
+    window.location.href = "/edit_profile";
+  </script>
+<% else %>
+<div class="create-profile-content">
+  <div class="create-profile">
+    <h1 class="profile-profile">Create Your Profile</h1>
+    <div class="profile-error-error"></div>
+    <div class="profile-form">
+      <div class="profile-icon">
+        <h2 class="profile-icon-icon">Profile Photo:</h2>
+          <div class="icon-container" id="preview"></div>
+          <label class="file-input-label"><p class="upload-image">Upload</p>
+            <input class="icon-file" type="file" accept="image/png, image/jpg" id="icon" required><br>
+          </label>
+      </div>
+      <div class="profile-bio">
+        <h2 class="profile-bio-bio">Bio:</h2>
+        <input class="profile-paragraph" type="text" id="paragraph"required><br>
+      </div>
+      <div class="profile-pronouns">
+        <h2 class="profile-pronouns-pronouns">Pronouns:</h2>
+        <select class="select-pronouns" name="pronounce" id="pronounce" required>
+          <option value="she/her">she/her</option>
+          <option value="he/him">he/him</option>
+          <option value="they/them">they/them</option>
+        </select><br>
+      </div>
+    </div>
+    <button class="signup-submit" id="submit">Create</button>
+  </div>
+</div>
+  
+<script>
+  const icon = document.querySelector('#icon')
+  let imageBlob = ''
+  
+  icon.addEventListener('change', () => {
+    console.log('change')
+    const preview = document.querySelector('#preview')
+    const files = icon.files 
+    const file = files[0]
+    
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const imageUrl = e.target.result 
+      const img = document.createElement('img')
+      img.src = imageUrl
+      img.className = 'icon-image';
+      preview.appendChild(img)
+      imageBlob = imageUrl
+    }
+    
+    reader.readAsDataURL(file)
+  })
+  
+  document.querySelector('#submit').addEventListener('click', () => {
+    console.log(imageBlob)
+    const paragraph = document.querySelector('#paragraph').value
+    const pronounce = document.querySelector('#pronounce').value
+    fetch('/create_profile', {
+      method: 'POST', 
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        paragraph: paragraph,
+        icon: imageBlob,
+        pronounce: pronounce,
+      })
+    })
+      .then(res => res.json())
+      .then(data => {
+        console.log('post', data)
+        if (data.msg == 'redirect') {
+          window.location.href = "/";
+        }
+      })
+  })
+</script>
+<% end %>
+  
